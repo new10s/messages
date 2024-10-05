@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Message Topics and Templates</title>
+  <!-- Embedded Styles -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 80px;
+      max-width: 800px;
+      margin: 0 auto;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 32px;
+    }
+
+    label {
+      font-size: 20px;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    select, .items-list {
+      width: 100%;
+      padding: 15px;
+      margin: 15px 0;
+      font-size: 18px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .items-list {
+      background-color: #fafafa;
+      max-height: 50vh;
+      width: 95%;
+      overflow-y: auto;
+      padding: 20px;
+      scrollbar-width: none; /* For Firefox */
+      -ms-overflow-style: none;  /* For IE and Edge */
+    }
+
+    .items-list::-webkit-scrollbar {
+      display: none;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      counter-reset: item;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+      font-size: 18px;
+      counter-increment: item;
+    }
+
+    li::before {
+      content: counter(item) ". ";
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    li:last-child {
+      border-bottom: none;
+    }
+
+    .copy-btn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      display: inline-flex;
+      align-items: center;
+      transition: background-color 0.3s;
+    }
+
+    .copy-btn i {
+      margin-right: 8px;
+    }
+
+    .copy-btn:hover {
+      background-color: #0056b3;
+    }
+
+    .popup-notification {
+      position: fixed;
+      top: 20px;
+      right: -300px;
+      background-color: #28a745;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transition: all 0.5s ease;
+      z-index: 1000;
+    }
+
+    .popup-show {
+      right: 20px;
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      li {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .copy-btn {
+        margin-top: 10px;
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Select a Message Topic</h1>
+    <label for="category-select">Choose a topic:</label>
+    <select id="category-select" onchange="showItems()">
+      <option value="">--Please choose a message topic--</option>
+    </select>
+
+    <div class="items-list" id="items-list">
+      <!-- List of templates will be displayed here -->
+    </div>
+  </div>
+
+  <!-- Popup Notification -->
+  <div id="popup-notification" class="popup-notification">
+    Message copied to clipboard!
+  </div>
+
+  <!-- Link to the external messages.js file -->
+  <script src="messages.js"></script>
+
+  <!-- Script for handling UI and logic -->
+  <script>
+    // Function to populate the dropdown with message topics
+    function populateDropdown() {
+      const select = document.getElementById("category-select");
+      for (let topic in messages) {
+        const option = document.createElement("option");
+        option.value = topic;
+        option.textContent = topic.charAt(0).toUpperCase() + topic.slice(1);
+        select.appendChild(option);
+      }
+    }
+
+    // Function to display templates based on selected topic
+    function showItems() {
+      const select = document.getElementById("category-select");
+      const itemsList = document.getElementById("items-list");
+      const selectedCategory = select.value;
+
+      itemsList.innerHTML = ''; // Clear previous items
+
+      if (messages[selectedCategory]) {
+        const items = messages[selectedCategory];
+        const ul = document.createElement('ul');
+        items.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = item;
+
+          // Create copy button
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'copy-btn';
+          copyBtn.innerHTML = '<i class="fas fa-copy"></i>Copy';
+          copyBtn.onclick = () => copyToClipboard(item);
+
+          li.appendChild(copyBtn);
+          ul.appendChild(li);
+        });
+        itemsList.appendChild(ul);
+      }
+    }
+
+    // Function to copy template text to clipboard and show popup notification
+    function copyToClipboard(text) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          showPopupNotification();
+        }).catch(err => {
+          console.error('Could not copy text: ', err);
+        });
+      } else {
+        const tempInput = document.createElement('input');
+        tempInput.style.position = 'absolute';
+        tempInput.style.left = '-9999px';
+        tempInput.value = text;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        showPopupNotification();
+      }
+    }
+
+    function showPopupNotification() {
+      const popup = document.getElementById('popup-notification');
+      popup.classList.add('popup-show');
+      setTimeout(() => {
+        popup.classList.remove('popup-show');
+      }, 3000);
+    }
+
+    // Load messages on page load
+    window.onload = populateDropdown;
+  </script>
+
+</body>
+</html>
